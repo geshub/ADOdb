@@ -95,7 +95,13 @@ $ADODB_INCLUDED_CSV = 1;
 	{
 		$false = false;
 		$err = false;
-		$fp = @fopen($url,'rb');
+		
+		if ( file_exists($url) ) {
+                $fp = @fopen($url,'rb');
+                } else {
+                $fp = NULL;
+                }
+                
 		if (!$fp) {
 			$err = $url.' file/URL not found';
 			return $false;
