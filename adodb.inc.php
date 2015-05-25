@@ -1900,9 +1900,10 @@ if (!defined('_ADODB_LAYER')) {
 	 * When not in safe mode, we create 256 sub-directories in the cache directory ($ADODB_CACHE_DIR).
 	 * Assuming that we can have 50,000 files per directory with good performance,
 	 * then we can scale to 12.8 million unique cached recordsets. Wow!
+         * WK moded to allow setting memcache prefix with unique key by query ( own application use to delete specific queries )
 	 */
 	function _gencachename($sql,$createdir) {
-		global $ADODB_CACHE, $ADODB_CACHE_DIR;
+		global $ADODB_CACHE, $ADODB_CACHE_DIR, $ADODB_MEM_UNIQUE;
 
 		if ($this->fetchMode === false) {
 			global $ADODB_FETCH_MODE;
@@ -1910,7 +1911,13 @@ if (!defined('_ADODB_LAYER')) {
 		} else {
 			$mode = $this->fetchMode;
 		}
-		$m = md5($sql.$this->databaseType.$this->database.$this->user.$mode);
+		
+        if ( isset($ADODB_MEM_UNIQUE) && strlen($ADODB_MEM_UNIQUE)>4 ) {
+            return $ADODB_MEM_UNIQUE;
+         } else {
+            $m = md5($sql.$this->databaseType.$this->database.$this->user.$mode);
+         }
+
 		if (!$ADODB_CACHE->createdir) {
 			return $m;
 		}
