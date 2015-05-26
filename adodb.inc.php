@@ -1051,9 +1051,9 @@ if (!defined('_ADODB_LAYER')) {
 	/**
 	 * Execute SQL
 	 *
-	 * @param sql		SQL statement to execute, or possibly an array holding prepared statement ($sql[0] will hold sql text)
-	 * @param [inputarr]	holds the input data to bind to. Null elements will be set to null.
-	 * @return RecordSet or false
+	 * @param string $sql SQL statement to execute, or possibly an array holding prepared statement ($sql[0] will hold sql text)
+	 * @param array|bool $inputarr	holds the input data to bind to. Null elements will be set to null.
+	 * @return object RecordSet or false
 	 */
 	function Execute($sql,$inputarr=false) {
 		if ($this->fnExecute) {
