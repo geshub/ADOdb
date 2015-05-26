@@ -4511,7 +4511,7 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	 * @param [db]  is the database Connection object to create. If undefined,
 	 *	use the last database driver that was loaded by ADOLoadCode().
 	 *
-	 * @return the freshly created instance of the Connection class.
+	 * @return the ADOConnection freshly created instance of the Connection class.
 	 */
 	function ADONewConnection($db='') {
 		global $ADODB_NEWCONNECTION, $ADODB_LASTDB;
