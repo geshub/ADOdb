@@ -1938,7 +1938,7 @@ if (!defined('_ADODB_LAYER')) {
 	 *					  This is an optional parameter.
 	 * @param sql		SQL statement to execute
 	 * @param [inputarr]	holds the input data  to bind to
-	 * @return		RecordSet or false
+	 * @return object RecordSet or false
 	 */
 	function CacheExecute($secs2cache,$sql=false,$inputarr=false) {
 		global $ADODB_CACHE;
