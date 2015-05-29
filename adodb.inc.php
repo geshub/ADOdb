@@ -1934,10 +1934,9 @@ if (!defined('_ADODB_LAYER')) {
 	/**
 	 * Execute SQL, caching recordsets.
 	 *
-	 * @param [secs2cache]	seconds to cache data, set to 0 to force query.
-	 *					  This is an optional parameter.
-	 * @param sql		SQL statement to execute
-	 * @param [inputarr]	holds the input data  to bind to
+	 * @param int [secs2cache]	seconds to cache data, set to 0 to force query. This is an optional parameter.
+	 * @param string|bool $sql SQL statement to execute
+	 * @param array|bool $inputarr [inputarr]	holds the input data  to bind to
 	 * @return object RecordSet or false
 	 */
 	function CacheExecute($secs2cache,$sql=false,$inputarr=false) {
