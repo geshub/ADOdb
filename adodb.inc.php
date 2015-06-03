@@ -848,8 +848,8 @@ if (!defined('_ADODB_LAYER')) {
 	* The fetch modes for NUMERIC and ASSOC for PEAR DB and ADODB are identical
 	* for easy porting :-)
 	*
-	* @param mode	The fetchmode ADODB_FETCH_ASSOC or ADODB_FETCH_NUM
-	* @returns		The previous fetch mode
+	* @param string $mode The fetchmode ADODB_FETCH_ASSOC or ADODB_FETCH_NUM
+	* @returns	string The previous fetch mode
 	*/
 	function SetFetchMode($mode) {
 		$old = $this->fetchMode;
@@ -1785,6 +1785,13 @@ if (!defined('_ADODB_LAYER')) {
 		return false;
 	}
 
+        /**
+         * @param int [secs2cache]	seconds to cache data, set to 0 to force query. This is an optional parameter.
+         * @param string|bool $sql SQL statement
+         * @param array|bool $inputarr input bind array
+         *
+         * @return object recordset array
+         */
 	function CacheGetRow($secs2cache,$sql=false,$inputarr=false) {
 		$rs = $this->CacheExecute($secs2cache,$sql,$inputarr);
 		if ($rs) {
