@@ -1758,8 +1758,10 @@ if (!defined('_ADODB_LAYER')) {
 	* Return one row of sql statement. Recordset is disposed for you.
 	* Note that SelectLimit should not be called.
 	*
-	* @param sql			SQL statement
-	* @param [inputarr]		input bind array
+	* @param string $sql SQL statement
+	* @param array|bool $inputarr input bind array
+        *
+        * @return object recordset array
 	*/
 	function GetRow($sql,$inputarr=false) {
 		global $ADODB_COUNTRECS;
