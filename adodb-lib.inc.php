@@ -416,7 +416,10 @@ function _adodb_getcount(&$zthis, $sql,$inputarr=false,$secs2cache=0)
 			} else
 				$rewritesql = "SELECT COUNT(*) FROM (".$rewritesql.")";
 
-		} else if (strncmp($zthis->databaseType,'postgres',8) == 0 || strncmp($zthis->databaseType,'mysql',5) == 0)  {
+		} else if (strncmp($zthis->databaseType,'postgres',8) == 0
+			|| strncmp($zthis->databaseType,'mysql',5) == 0
+			|| strncmp($zthis->databaseType,'mssql',5) == 0
+		) {
 			$rewritesql = "SELECT COUNT(*) FROM ($rewritesql) _ADODB_ALIAS_";
 		} else {
 			$rewritesql = "SELECT COUNT(*) FROM ($rewritesql)";
@@ -465,18 +468,11 @@ function _adodb_getcount(&$zthis, $sql,$inputarr=false,$secs2cache=0)
 		if (!$rstest) $rstest = $zthis->Execute($sql,$inputarr);
 	}
 	if ($rstest) {
-	  		$qryRecs = $rstest->RecordCount();
+		$qryRecs = $rstest->RecordCount();
 		if ($qryRecs == -1) {
-		global $ADODB_EXTENSION;
-		// some databases will return -1 on MoveLast() - change to MoveNext()
-			if ($ADODB_EXTENSION) {
-				while(!$rstest->EOF) {
-					adodb_movenext($rstest);
-				}
-			} else {
-				while(!$rstest->EOF) {
-					$rstest->MoveNext();
-				}
+			// some databases will return -1 on MoveLast() - change to MoveNext()
+			while(!$rstest->EOF) {
+				$rstest->MoveNext();
 			}
 			$qryRecs = $rstest->_currentRow;
 		}
@@ -905,7 +901,7 @@ static $cacheCols;
                         		$values .= _adodb_column_sql($zthis, 'I', $type, $upperfname, $fnameq, $arrFields, $magicq);
              				}
               			break;
-						
+
 						case ADODB_FORCE_NULL_AND_ZERO:
 							switch ($type)
 							{
@@ -919,7 +915,7 @@ static $cacheCols;
 									break;
 							}
 						break;
-						
+
              		} // switch
 
             /*********************************************************/
