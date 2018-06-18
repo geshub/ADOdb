@@ -447,6 +447,7 @@ if (!defined('_ADODB_LAYER')) {
 	var $databaseType = '';		/// RDBMS currently in use, eg. odbc, mysql, mssql
 	var $database = '';			/// Name of database to be used.
 	var $host = '';				/// The hostname of the database server
+	var $port = '';				/// The port of the database server
 	var $user = '';				/// The username which is used to connect to the database server.
 	var $password = '';			/// Password for the username. For security, we no longer store it.
 	var $debug = false;			/// if set to true will output sql statements
@@ -659,6 +660,26 @@ if (!defined('_ADODB_LAYER')) {
 	}
 
 	/**
+	 * Parses the hostname to extract the port.
+	 * Overwrites $this->host and $this->port, only if a port is specified.
+	 * The Hostname can be fully or partially qualified,
+	 * ie: "db.mydomain.com:5432" or "ldaps://ldap.mydomain.com:636"
+	 * Any specified scheme such as ldap:// or ldaps:// is maintained.
+	 */
+	protected function parseHostNameAndPort() {
+		$parsed_url = parse_url($this->host);
+		if (is_array($parsed_url) && isset($parsed_url['host']) && isset($parsed_url['port'])) {
+			if ( isset($parsed_url['scheme']) ) {
+				// If scheme is specified (ie: ldap:// or ldaps://, make sure we retain that.
+				$this->host = $parsed_url['scheme'] . "://" . $parsed_url['host'];
+			} else {
+				$this->host = $parsed_url['host'];
+			}
+			$this->port = $parsed_url['port'];
+		}
+	}
+
+	/**
 	 * Connect to database
 	 *
 	 * @param [argHostname]		Host to connect to
@@ -673,9 +694,9 @@ if (!defined('_ADODB_LAYER')) {
 		if ($argHostname != "") {
 			$this->host = $argHostname;
 		}
-		if ( strpos($this->host, ':') > 0 && isset($this->port) ) {
-			list($this->host, $this->port) = explode(":", $this->host, 2);
-        	}
+		// Overwrites $this->host and $this->port if a port is specified.
+		$this->parseHostNameAndPort();
+
 		if ($argUsername != "") {
 			$this->user = $argUsername;
 		}
@@ -756,9 +777,9 @@ if (!defined('_ADODB_LAYER')) {
 		if ($argHostname != "") {
 			$this->host = $argHostname;
 		}
-		if ( strpos($this->host, ':') > 0 && isset($this->port) ) {
-			list($this->host, $this->port) = explode(":", $this->host, 2);
-	        }
+		// Overwrites $this->host and $this->port if a port is specified.
+		$this->parseHostNameAndPort();
+
 		if ($argUsername != "") {
 			$this->user = $argUsername;
 		}
@@ -3214,6 +3235,60 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 		return $x;
 	}
 
+	/**
+	 * Get the last error recorded by PHP and clear the message.
+	 *
+	 * By clearing the message, it becomes possible to detect whether a new error
+	 * has occurred, even when it is the same error as before being repeated.
+	 *
+	 * @return array|null Array if an error has previously occurred. Null otherwise.
+	 */
+	protected function resetLastError() {
+		$error = error_get_last();
+
+		if (is_array($error)) {
+			$error['message'] = '';
+		}
+
+		return $error;
+	}
+
+	/**
+	 * Compare a previously stored error message with the last error recorded by PHP
+	 * to determine whether a new error has occured.
+	 *
+	 * @param array|null $old Optional. Previously stored return value of error_get_last().
+	 *
+	 * @return string The error message if a new error has occured
+	 *                or an empty string if no (new) errors have occured..
+	 */
+	protected function getChangedErrorMsg($old = null) {
+		$new = error_get_last();
+
+		if (is_null($new)) {
+			// No error has occured yet at all.
+			return '';
+		}
+
+		if (is_null($old)) {
+			// First error recorded.
+			return $new['message'];
+		}
+
+		$changed = false;
+		foreach($new as $key => $value) {
+			if ($new[$key] !== $old[$key]) {
+				$changed = true;
+				break;
+			}
+		}
+
+		if ($changed === true) {
+			return $new['message'];
+		}
+
+		return '';
+	}
 
 } // end class ADOConnection
 
