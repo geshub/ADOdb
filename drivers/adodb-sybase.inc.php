@@ -8,7 +8,7 @@
   the BSD license will take precedence.
   Set tabs to 4 for best viewing.
 
-  Latest version is available at http://adodb.sourceforge.net
+  Latest version is available at http://adodb.org/
 
   Sybase driver contributed by Toni (toni.tunkkari@finebyte.com)
 
@@ -113,8 +113,10 @@ class ADODB_sybase extends ADOConnection {
 		if ($this->_logsql) return $this->_errorMsg;
 		if (function_exists('sybase_get_last_message'))
 			$this->_errorMsg = sybase_get_last_message();
-		else
-			$this->_errorMsg = isset($php_errormsg) ? $php_errormsg : 'SYBASE error messages not supported on this platform';
+		else {
+			$this->_errorMsg = 'SYBASE error messages not supported on this platform';
+		}
+
 		return $this->_errorMsg;
 	}
 

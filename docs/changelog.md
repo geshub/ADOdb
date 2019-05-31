@@ -44,6 +44,7 @@ Older changelogs:
 - mysqli: method failed if $associative set true. #181
 - mysqli: return fields as ADOFieldObject objects. #175
 - odbc/mssql: fix null strings concatenation issue with SQL server 2012. #148
+- odbc/mssql: add missing Concat() method. #402
 - odbc: MetaColumns() can optionally be set to return MetaType for backwards compatibility. #184
 - pdo: allow loading of subclassed recordset. #245
 - pdo: add setConnectionParameter support. #247
@@ -62,13 +63,45 @@ Older changelogs:
 - session: add 'httponly' flag to cookie. #190
 - xml: support table 'opt' attribute with mysqli. #267
 
-## 5.20.11 - 30-Mar-2018
+## 5.20.15 - ???
+
+- core: remove unnecessary srand() calls. #532
+- pdo/mysql: remove extraneous comma in $fmtTimeStamp. #531
+- active record: Use ADODB_ASSOC_CASE constant. #536
+- session: Remove session_module_name('user') calls (PHP 7.2 compatibility). #449
+ 
+## 5.20.14 - 06-Jan-2019
+
+- security: Denial of service in adodb_date(). #467
+- core: Fix support for getMenu with ADODB_FETCH_ASSOC. #460
+- perf/mysql: fix tables() function incompatible with parent. #435
+- perf/mysql: fix error when logging slow queries. #463
+
+## 5.20.13 - 06-Aug-2018
+
+- core: Fix query execution failures with mismatched quotes. #420
+- ldap: Fix connections using URIs. #340
+- mssql: Fix Time field format, allowing autoExecute() to inserting time. #432
+- mssql: Fix Insert_ID returning null with table name in brackets. #313
+- mssql: Fix count wrapper. #423
+- oci8: Fix prepared statements failure. #318
+- oci8po: Fix incorrect query parameter replacements. #370
+- pdo: fix PHP notice due to uninitialized variable. #437
+
+## 5.20.12 - 30-Mar-2018
 
 - adodb: PHP 7.2 compatibility
 	- Replace each() with foreach. #373
 	- Replace deprecated create_function() calls. #404
 	- Replace $php_errormsg with error_get_last(). #405
+- adodb: Don't call `dl()` when the function is disabled #406
+- adodb: Don't bother with magic quotes when not available #407
 - adodb: fix potential SQL injection vector in SelectLimit(). #190 #311 #401
+
+## 5.20.11 - Withdrawn
+
+This release has been withdrawn as it introduced a regression on PHP 5.x.
+Please use version 5.20.12 or later.
 
 ## 5.20.10 - 08-Mar-2018
 
@@ -411,7 +444,7 @@ other database types as well; all drivers derived from the above are also impact
 - BeginTrans/CommitTrans/RollbackTrans return true/false correctly on success/failure now for mssql, odbc, oci8, mysqlt, mysqli, postgres, pdo.
 - Replace() now quotes all non-null values including numeric ones.
 - Postgresql qstr() now returns booleans as *true* and *false* without quotes.
-- MetaForeignKeys in mysql and mysqli drivers had this problem: A table can have two foreign keys pointing to the same column in the same table. The original code will incorrectly report only the last column. Fixed. https://sourceforge.net/tracker/index.php?func=detail&aid=2287278&group_id=42718&atid=433976
+- MetaForeignKeys in mysql and mysqli drivers had this problem: A table can have two foreign keys pointing to the same column in the same table. The original code will incorrectly report only the last column. Fixed. https://sourceforge.net/p/adodb/bugs/100/
 - Passing in full ado connection string in $argHostname with ado drivers was failing in adodb5 due to bug. Fixed.
 - Fixed memcachelib flushcache and flushall bugs. Also fixed possible timeCreated = 0 problem in readcache. (Also in adodb 4.992). Thanks AlexB_UK (alexbarnes#hotmail.com).
 - Fixed a notice in adodb-sessions2.inc.php, in _conn(). Thx bober m.derlukiewicz#rocktech.remove_me.pl;

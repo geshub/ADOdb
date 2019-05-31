@@ -8,7 +8,7 @@
   the BSD license will take precedence. See License.txt.
   Set tabs to 4 for best viewing.
 
-  Latest version is available at http://adodb.sourceforge.net
+  Latest version is available at http://adodb.org/
 
   Library for basic performance monitoring and tuning
 
@@ -118,7 +118,7 @@ class perf_mysql extends adodb_perf{
 		return $s;
 	}
 
-	function Tables()
+	function tables($orderby='1')
 	{
 		if (!$this->tablesSQL) return false;
 

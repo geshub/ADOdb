@@ -255,8 +255,7 @@ class ADODB_text extends ADOConnection {
 					$projtypes = array($this->_types[$i]);
 					$projnames = array($n);
 
-					reset($where_arr);
-					while (list($k_a,$a) = each($where_arr)) {
+					foreach ($where_arr as $a) {
 						if ($i == 0 && $this->_skiprow1) {
 							$projarray[] = array($n);
 							continue;
@@ -322,7 +321,7 @@ class ADODB_text extends ADOConnection {
 
 		// check for desc sort
 		$orderby = substr($orderby,strlen($col)+1);
-		$arr == array();
+		$arr = array();
 		preg_match('/([A-Z_0-9]*)/i',$orderby,$arr);
 
 		if (trim($arr[1]) == 'DESC') $sortf = 'adodb_cmpr';

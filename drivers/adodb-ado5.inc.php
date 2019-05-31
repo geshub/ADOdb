@@ -8,7 +8,7 @@
   the BSD license will take precedence.
 Set tabs to 4 for best viewing.
 
-  Latest version is available at http://adodb.sourceforge.net
+  Latest version is available at http://adodb.org/
 
 	Microsoft ADO data driver. Requires ADO. Works only on MS Windows. PHP5 compat version.
 */
@@ -384,7 +384,7 @@ class ADORecordSet_ado extends ADORecordSet {
 			$mode = $ADODB_FETCH_MODE;
 		}
 		$this->fetchMode = $mode;
-		return parent::__construct($id);
+		parent::__construct($id);
 	}
 
 

@@ -8,7 +8,7 @@
   the BSD license will take precedence.
   Set tabs to 4 for best viewing.
 
-  Latest version is available at http://adodb.sourceforge.net
+  Latest version is available at http://adodb.org/
 
   Informix port by Mitchell T. Young (mitch@youngfamily.org)
 
@@ -403,7 +403,7 @@ class ADORecordset_informix72 extends ADORecordSet {
 			$mode = $ADODB_FETCH_MODE;
 		}
 		$this->fetchMode = $mode;
-		return parent::__construct($id);
+		parent::__construct($id);
 	}
 
 

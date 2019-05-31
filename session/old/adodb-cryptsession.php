@@ -11,7 +11,7 @@
 
   Set tabs to 4 for best viewing.
 
-  Latest version of ADODB is available at http://php.weblogs.com/adodb
+  Latest version is available at http://adodb.org/
   ======================================================================
 
  This file provides PHP4 session management using the ADODB database
@@ -302,7 +302,6 @@ function adodb_sess_gc($maxlifetime) {
 	return true;
 }
 
-session_module_name('user');
 session_set_save_handler(
 	"adodb_sess_open",
 	"adodb_sess_close",

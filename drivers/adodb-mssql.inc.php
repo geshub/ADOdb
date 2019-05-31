@@ -8,7 +8,7 @@
   the BSD license will take precedence.
 Set tabs to 4 for best viewing.
 
-  Latest version is available at http://adodb.sourceforge.net
+  Latest version is available at http://adodb.org/
 
   Native mssql driver. Requires mssql client. Works on Windows.
   To configure for Unix, see
@@ -245,6 +245,8 @@ class ADODB_mssql extends ADOConnection {
 
 	function SelectLimit($sql,$nrows=-1,$offset=-1, $inputarr=false,$secs2cache=0)
 	{
+		$nrows = (int) $nrows;
+		$offset = (int) $offset;
 		if ($nrows > 0 && $offset <= 0) {
 			$sql = preg_replace(
 				'/(^\s*select\s+(distinctrow|distinct)?)/i','\\1 '.$this->hasTop." $nrows ",$sql);
@@ -689,7 +691,12 @@ order by constraint_name, referenced_table_name, keyno";
 				$arr = $args;
 			}
 
-			array_walk($arr, create_function('&$v', '$v = "CAST(" . $v . " AS VARCHAR(255))";'));
+			array_walk(
+				$arr,
+				function(&$value, $key) {
+					$value = "CAST(" . $value . " AS VARCHAR(255))";
+				}
+			);
 			$s = implode('+',$arr);
 			if (sizeof($arr) > 0) return "$s";
 
@@ -807,7 +814,16 @@ order by constraint_name, referenced_table_name, keyno";
 						$decl .= "@P$i NVARCHAR($len)";
 					}
 
-					$params .= "@P$i=N". (strncmp($v,"'",1)==0? $v : $this->qstr($v));
+					if(substr($v,0,1) == "'" && substr($v,-1,1) == "'")
+						/*
+						* String is already fully quoted
+						*/
+						$inputVar = $v;
+					else
+						$inputVar = $db->this($v);
+
+					$params .= "@P$i=N" . $inputVar;
+					
 				} else if (is_integer($v)) {
 					$decl .= "@P$i INT";
 					$params .= "@P$i=".$v;
@@ -1050,9 +1066,9 @@ class ADORecordset_mssql extends ADORecordSet {
 					$this->fields = @mssql_fetch_assoc($this->_queryID);
 				else {
 					$this->fields = @mssql_fetch_array($this->_queryID);
-					if (@is_array($$this->fields)) {
+					if (@is_array($this->fields)) {
 						$fassoc = array();
-						foreach($$this->fields as $k => $v) {
+						foreach($this->fields as $k => $v) {
 							if (is_integer($k)) continue;
 							$fassoc[$k] = $v;
 						}

@@ -59,6 +59,11 @@ class ADODB_mysqli extends ADOConnection {
 	var $optionFlags = array(array(MYSQLI_READ_DEFAULT_GROUP,0));
 	var $arrayClass = 'ADORecordSet_array_mysqli';
 	var $multiQuery = false;
+	var $ssl_key = null;
+	var $ssl_cert = null;
+	var $ssl_ca = null;
+	var $ssl_capath = null;
+	var $ssl_cipher = null;
 
 	/*
 	* Tells the insert_id method how to obtain the last value, depending on whether
@@ -119,6 +124,11 @@ class ADODB_mysqli extends ADOConnection {
 
 		//http ://php.net/manual/en/mysqli.persistconns.php
 		if ($persist && PHP_VERSION > 5.2 && strncmp($argHostname,'p:',2) != 0) $argHostname = 'p:'.$argHostname;
+
+		// SSL Connections for MySQLI
+		if ($this->ssl_key || $this->ssl_cert || $this->ssl_ca || $this->ssl_capath || $this->ssl_cipher) {
+			mysqli_ssl_set($this->_connectionID, $this->ssl_key, $this->ssl_cert, $this->ssl_ca, $this->ssl_capath, $this->ssl_cipher);
+		}
 
 		#if (!empty($this->port)) $argHostname .= ":".$this->port;
 		$ok = @mysqli_real_connect($this->_connectionID,
@@ -633,7 +643,7 @@ class ADODB_mysqli extends ADOConnection {
 				$ref_table = strtoupper($ref_table);
 			}
 
-			// see https://sourceforge.net/tracker/index.php?func=detail&aid=2287278&group_id=42718&atid=433976
+			// see https://sourceforge.net/p/adodb/bugs/100/
 			if (!isset($foreign_keys[$ref_table])) {
 				$foreign_keys[$ref_table] = array();
 			}
@@ -745,6 +755,8 @@ class ADODB_mysqli extends ADOConnection {
 				$inputarr = false,
 				$secs = 0)
 	{
+		$nrows = (int) $nrows;
+		$offset = (int) $offset;
 		$offsetStr = ($offset >= 0) ? "$offset," : '';
 		if ($nrows < 0) $nrows = '18446744073709551615';
 

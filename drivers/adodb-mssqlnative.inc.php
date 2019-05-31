@@ -8,7 +8,7 @@
   the BSD license will take precedence.
 Set tabs to 4 for best viewing.
 
-  Latest version is available at http://adodb.sourceforge.net
+  Latest version is available at http://adodb.org/
 
   Native mssql driver. Requires mssql client. Works on Windows.
     http://www.microsoft.com/sql/technologies/php/default.mspx
@@ -318,6 +318,20 @@ class ADODB_mssqlnative extends ADOConnection {
 		if (!$col) $col = $this->sysTimeStamp;
 		$s = '';
 
+		$ConvertableFmt=array(
+		       "m/d/Y"=>101,"m/d/y"=>101 // US
+		      ,"Y.m.d"=>102,"y/m/d"=>102 // ANSI
+		      ,"d/m/Y"=>103,"d/m/y"=>103 // French /english
+		      ,"d.m.Y"=>104,"d.m.y"=>104 // German
+		      ,"d-m-Y"=>105,"d-m-y"=>105 // Italian
+		      ,"m-d-Y"=>110,"m-d-y"=>110 // US Dash
+		      ,"Y/m/d"=>111,"y/m/d"=>111 // Japan
+		      ,"Ymd"=>112,"ymd"=>112 // ISO
+		      ,"H:i:s"=>108 // Time
+		);
+		if(key_exists($fmt,$ConvertableFmt))
+		  return  "convert (varchar ,$col,".$ConvertableFmt[$fmt].")";
+
 		$len = strlen($fmt);
 		for ($i=0; $i < $len; $i++) {
 			if ($s) $s .= '+';
@@ -469,13 +483,40 @@ class ADODB_mssqlnative extends ADOConnection {
 	// returns true or false
 	function _connect($argHostname, $argUsername, $argPassword, $argDatabasename)
 	{
-		if (!function_exists('sqlsrv_connect')) return null;
-
+		if (!function_exists('sqlsrv_connect'))
+		{
+			if ($this->debug)
+				ADOConnection::outp('Microsoft SQL Server native driver (mssqlnative) not installed');
+			return null;
+		}
+		
 		$connectionInfo 			= $this->connectionInfo;
 		$connectionInfo["Database"]	= $argDatabasename;
-		$connectionInfo["UID"]		= $argUsername;
-		$connectionInfo["PWD"]		= $argPassword;
-
+		if ((string)$argUsername != '' || (string)$argPassword != '')
+		{
+			/*
+			* If they pass either a userid or password, we assume
+			* SQL Server authentication
+			*/
+			$connectionInfo["UID"]		= $argUsername;
+			$connectionInfo["PWD"]		= $argPassword;
+			
+			if ($this->debug)
+				ADOConnection::outp('userid or password supplied, attempting connection with SQL Server Authentication');
+			
+		}
+		else 
+		{
+			/*
+			* If they don't pass either value, we wont add them to the
+			* connection parameters. This will then force an attempt
+			* to use windows authentication
+			*/
+			if ($this->debug)
+				ADOConnection::outp('No userid or password supplied, attempting connection with Windows Authentication');
+		}
+				
+		
 		/*
 		* Now merge in the passed connection parameters setting
 		*/
@@ -485,10 +526,11 @@ class ADODB_mssqlnative extends ADOConnection {
 				$connectionInfo[$parameter] = $value;
 		}
 
-		if ($this->debug) ADOConnection::outp("<hr>connecting... hostname: $argHostname params: ".var_export($connectionInfo,true));
-		if(!($this->_connectionID = sqlsrv_connect($argHostname,$connectionInfo)))
+		if ($this->debug) ADOConnection::outp("connecting to host: $argHostname params: ".var_export($connectionInfo,true));
+		if(!($this->_connectionID = @sqlsrv_connect($argHostname,$connectionInfo)))
 		{
-			if ($this->debug) ADOConnection::outp( "<hr><b>errors</b>: ".print_r( sqlsrv_errors(), true));
+			if ($this->debug) 
+				ADOConnection::outp( 'Connection Failed: '.print_r( sqlsrv_errors(), true));
 			return false;
 		}
 
@@ -526,7 +568,12 @@ class ADODB_mssqlnative extends ADOConnection {
 			$arr = $args;
 		}
 
-		array_walk($arr, create_function('&$v', '$v = "CAST(" . $v . " AS VARCHAR(255))";'));
+		array_walk(
+			$arr,
+			function(&$value, $key) {
+				$value = "CAST(" . $value . " AS VARCHAR(255))";
+			}
+		);
 		$s = implode('+',$arr);
 		if (sizeof($arr) > 0) return "$s";
 
@@ -566,7 +613,7 @@ class ADODB_mssqlnative extends ADOConnection {
 
 		$insert = false;
 		// handle native driver flaw for retrieving the last insert ID
-		if(preg_match('/^\W*insert[\s\w()",.]+values\s*\((?:[^;\']|\'\'|(?:(?:\'\')*\'[^\']+\'(?:\'\')*))*;?$/i', $sql)) {
+		if(preg_match('/^\W*insert[\s\w()[\]",.]+values\s*\((?:[^;\']|\'\'|(?:(?:\'\')*\'[^\']+\'(?:\'\')*))*;?$/i', $sql)) {
 			$insert = true;
 			$sql .= '; '.$this->identitySQL; // select scope_identity()
 		}
@@ -880,6 +927,72 @@ class ADODB_mssqlnative extends ADOConnection {
 	{
 		return ADODB_STRINGMAX_NOLIMIT;
 	}
+	/**
+	 * Lists procedures, functions and methods in an array.
+	 *
+	 * @param	string $procedureNamePattern (optional)
+	 * @param	string $catalog				 (optional)
+	 * @param	string $schemaPattern		 (optional)
+	 
+	 * @return array of stored objects in current database.
+	 *
+	 */
+	public function metaProcedures($procedureNamePattern = null, $catalog  = null, $schemaPattern  = null)
+	{
+		
+		$metaProcedures = array();
+		$procedureSQL   = '';
+		$catalogSQL     = '';
+		$schemaSQL      = '';
+				
+		if ($procedureNamePattern)
+			$procedureSQL = "AND ROUTINE_NAME LIKE " . strtoupper($this->qstr($procedureNamePattern));
+		
+		if ($catalog)
+			$catalogSQL = "AND SPECIFIC_SCHEMA=" . strtoupper($this->qstr($catalog));
+		
+		if ($schemaPattern)
+			$schemaSQL = "AND ROUTINE_SCHEMA LIKE {$this->qstr($schemaPattern)}";
+		
+				
+		$fields = "	ROUTINE_NAME,ROUTINE_TYPE,ROUTINE_SCHEMA,ROUTINE_CATALOG";
+		
+		$SQL = "SELECT $fields
+		          FROM {$this->database}.information_schema.routines
+				 WHERE 1=1
+				  $procedureSQL
+				  $catalogSQL
+				  $schemaSQL
+				ORDER BY ROUTINE_NAME
+				";
+		
+		$result = $this->execute($SQL);
+		
+		if (!$result)
+			return false;
+		while ($r = $result->fetchRow()){
+			
+			if (!isset($r[0]))
+				/*
+				* Convert to numeric
+				*/
+				$r = array_values($r);
+			
+			$procedureName = $r[0];
+			$schemaName    = $r[2];
+			$routineCatalog= $r[3];
+			$metaProcedures[$procedureName] = array('type'=> $r[1],
+												   'catalog' => $routineCatalog,
+												   'schema'  => $schemaName,
+												   'remarks' => '',
+												    );
+													
+		}
+		
+		return $metaProcedures;
+		
+	}
+	
 }
 
 /*--------------------------------------------------------------------------------------
@@ -922,10 +1035,11 @@ class ADORecordset_mssqlnative extends ADORecordSet {
 	/*
 	 * This is cross reference between how the types are stored
 	 * in SQL Server and their english-language description
+	 * -154 is a time field, see #432
 	 */
 	private $_typeConversion = array(
 			-155 => 'datetimeoffset',
-			-154 => 'time',
+			-154 => 'char',
 			-152 => 'xml',
 			-151 => 'udt',
 			-11  => 'uniqueidentifier',
@@ -962,7 +1076,7 @@ class ADORecordset_mssqlnative extends ADORecordSet {
 
 		}
 		$this->fetchMode = $mode;
-		return parent::__construct($id);
+		parent::__construct($id);
 	}
 
 

@@ -7,7 +7,7 @@
   Whenever there is any discrepancy between the two licenses,
   the BSD license will take precedence. See License.txt.
   Set tabs to 4 for best viewing.
-  Latest version is available at http://adodb.sourceforge.net
+  Latest version is available at http://adodb.org/
 */
 // Code contributed by "stefan bogdan" <sbogdan#rsb.ro>
 
@@ -605,9 +605,8 @@ class ADODB_odbtp extends ADOConnection{
 
 	function _query($sql,$inputarr=false)
 	{
-	global $php_errormsg;
-
-        $this->_errorMsg = false;
+		$last_php_error = $this->resetLastError();
+		$this->_errorMsg = false;
 		$this->_errorCode = false;
 
  		if ($inputarr) {
@@ -616,7 +615,7 @@ class ADODB_odbtp extends ADOConnection{
 			} else {
 				$stmtid = @odbtp_prepare($sql,$this->_connectionID);
 				if ($stmtid == false) {
-					$this->_errorMsg = $php_errormsg;
+					$this->_errorMsg = $this->getChangedErrorMsg($last_php_error);
 					return false;
 				}
 			}
