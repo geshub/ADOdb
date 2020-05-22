@@ -178,36 +178,6 @@ if (!defined('_ADODB_LAYER')) {
 	define('DB_AUTOQUERY_UPDATE', 2);
 
 
-	// PHP's version scheme makes converting to numbers difficult - workaround
-	$_adodb_ver = (float) PHP_VERSION;
-	if ($_adodb_ver >= 5.2) {
-		define('ADODB_PHPVER',0x5200);
-	} else if ($_adodb_ver >= 5.0) {
-		define('ADODB_PHPVER',0x5000);
-	} else {
-		die("PHP5 or later required. You are running ".PHP_VERSION);
-	}
-	unset($_adodb_ver);
-
-
-
-	/**
-		Accepts $src and $dest arrays, replacing string $data
-	*/
-	function ADODB_str_replace($src, $dest, $data) {
-		if (ADODB_PHPVER >= 0x4050) {
-			return str_replace($src,$dest,$data);
-		}
-
-		$s = reset($src);
-		$d = reset($dest);
-		while ($s !== false) {
-			$data = str_replace($s,$d,$data);
-			$s = next($src);
-			$d = next($dest);
-		}
-		return $data;
-	}
 
 	function ADODB_Setup() {
 	GLOBAL
@@ -498,8 +468,9 @@ if (!defined('_ADODB_LAYER')) {
 	var $ansiOuter = false; /// whether ansi outer join syntax supported
 	var $autoRollback = false; // autoRollback on PConnect().
 	var $poorAffectedRows = false; // affectedRows not working or unreliable
-
+	/** @var bool|callable  */
 	var $fnExecute = false;
+	/** @var bool|callable  */
 	var $fnCacheExecute = false;
 	var $blobEncodeType = false; // false=not required, 'I'=encode to integer, 'C'=encode to char
 	var $rsPrefix = "ADORecordSet_";
@@ -560,13 +531,17 @@ if (!defined('_ADODB_LAYER')) {
 	*
 	* @example, for mssqlnative driver ('CharacterSet','UTF-8')
 	*/
-	final public function setConnectionParameter($parameter,$value)
-	{
+	final public function setConnectionParameter($parameter,$value) {
 
 		$this->connectionParameters[] = array($parameter=>$value);
 
 	}
 
+	/**
+	 * ADOdb version.
+	 *
+	 * @return string
+	 */
 	static function Version() {
 		global $ADODB_vers;
 
@@ -588,15 +563,20 @@ if (!defined('_ADODB_LAYER')) {
 	}
 
 	/**
-		Get server version info...
-
-		@returns An array with 2 elements: $arr['string'] is the description string,
-			and $arr[version] is the version (also a string).
-	*/
+	 * Get server version info.
+	 *
+	 * @return string[] An array with 2 elements: $arr['string'] is the description string,
+	 *				 	and $arr[version] is the version (also a string).
+	 */
 	function ServerInfo() {
 		return array('description' => '', 'version' => '');
 	}
 
+	/**
+	 * Return true if connected to the database.
+	 *
+	 * @return bool
+	 */
 	function IsConnected() {
 		return !empty($this->_connectionID);
 	}
@@ -610,9 +590,13 @@ if (!defined('_ADODB_LAYER')) {
 	}
 
 	/**
-	* All error messages go through this bottleneck function.
-	* You can define your own handler by defining the function name in ADODB_OUTP.
-	*/
+	 * All error messages go through this bottleneck function.
+	 *
+	 * You can define your own handler by defining the function name in ADODB_OUTP.
+	 *
+	 * @param string $msg     Message to print
+	 * @param bool   $newline True to add a newline after printing $msg
+	 */
 	static function outp($msg,$newline=true) {
 		global $ADODB_FLUSH,$ADODB_OUTP;
 
@@ -642,6 +626,10 @@ if (!defined('_ADODB_LAYER')) {
 
 	}
 
+	/**
+	 * Return the database server's current date and time.
+	 * @return int|false
+	 */
 	function Time() {
 		$rs = $this->_Execute("select $this->sysTimeStamp");
 		if ($rs && !$rs->EOF) {
@@ -735,16 +723,17 @@ if (!defined('_ADODB_LAYER')) {
 		return $this->_connect($argHostname, $argUsername, $argPassword, $argDatabaseName);
 	}
 
-
 	/**
-	 * Always force a new connection to database - currently only works with oracle
+	 * Always force a new connection to database.
 	 *
-	 * @param [argHostname]		Host to connect to
-	 * @param [argUsername]		Userid to login
-	 * @param [argPassword]		Associated password
-	 * @param [argDatabaseName]	database
+	 * Currently this only works with Oracle.
 	 *
-	 * @return true or false
+	 * @param string $argHostname     Host to connect to
+	 * @param string $argUsername     Userid to login
+	 * @param string $argPassword     Associated password
+	 * @param string $argDatabaseName Database name
+	 *
+	 * @return bool
 	 */
 	function NConnect($argHostname = "", $argUsername = "", $argPassword = "", $argDatabaseName = "") {
 		return $this->Connect($argHostname, $argUsername, $argPassword, $argDatabaseName, true);
@@ -816,7 +805,11 @@ if (!defined('_ADODB_LAYER')) {
 		ADOConnection::outp($msg);
 	}
 
-	// create cache class. Code is backward compat with old memcache implementation
+	/**
+	 * Create cache class.
+	 *
+	 * Code is backwards-compatible with old memcache implementation.
+	 */
 	function _CreateCache() {
 		global $ADODB_CACHE, $ADODB_CACHE_CLASS;
 
@@ -832,8 +825,16 @@ if (!defined('_ADODB_LAYER')) {
 		}
 	}
 
-	// Format date column in sql string given an input format that understands Y M D
-	function SQLDate($fmt, $col=false) {
+	/**
+	 * Format date column in sql string.
+	 *
+	 * See https://adodb.org/dokuwiki/doku.php?id=v5:reference:connection:sqldate
+	 * for documentation on supported formats.
+	 *
+	 * @param string $fmt Format string
+	 * @param string $col Date column; use system date if not specified.
+	 */
+	function SQLDate($fmt, $col = '') {
 		if (!$col) {
 			$col = $this->sysDate;
 		}
@@ -860,6 +861,8 @@ if (!defined('_ADODB_LAYER')) {
 	}
 
 	/**
+	 * Prepare a Stored Procedure and return the statement resource.
+	 *
 	 * Some databases, eg. mssql require a different function for preparing
 	 * stored procedures. So we cannot use Prepare().
 	 *
@@ -867,11 +870,11 @@ if (!defined('_ADODB_LAYER')) {
 	 * For databases that do not support this, we return the $sql. To ensure
 	 * compatibility with databases that do not support prepare:
 	 *
-	 * @param sql	SQL to send to database
+	 * @param string $sql   SQL to send to database
+	 * @param bool   $param
 	 *
-	 * @return return FALSE, or the prepared statement, or the original sql if
-	 *         if the database does not support prepare.
-	 *
+	 * @return mixed|false The prepared statement, or the original sql if the
+	 *                     database does not support prepare.
 	 */
 	function PrepareSP($sql,$param=true) {
 		return $this->Prepare($sql,$param);
@@ -938,8 +941,9 @@ if (!defined('_ADODB_LAYER')) {
 	* The fetch modes for NUMERIC and ASSOC for PEAR DB and ADODB are identical
 	* for easy porting :-)
 	*
-	* @param string $mode The fetchmode ADODB_FETCH_ASSOC or ADODB_FETCH_NUM
-	* @returns	string The previous fetch mode
+	* @param int $mode The fetchmode ADODB_FETCH_ASSOC or ADODB_FETCH_NUM
+	*
+	* @return int Previous fetch mode
 	*/
 	function SetFetchMode($mode) {
 		$old = $this->fetchMode;
@@ -1141,14 +1145,12 @@ if (!defined('_ADODB_LAYER')) {
 	/**
 	 * Execute SQL
 	 *
-	 * @param string $sql SQL statement to execute, or possibly an array holding prepared statement ($sql[0] will hold sql text)
-<<<<<<< HEAD
-	 * @param array|bool $inputarr	holds the input data to bind to. Null elements will be set to null.
-	 * @return object RecordSet or false
-=======
-	 * @param false|array $inputarr holds the input data to bind to. Null elements will be set to null.
-	 * @return false|ADORecordSet
->>>>>>> ADOdb/master
+	 * @param string     $sql      SQL statement to execute, or possibly an array
+	 *                             holding prepared statement ($sql[0] will hold sql text)
+	 * @param array|bool $inputarr holds the input data to bind to.
+	 *                             Null elements will be set to null.
+	 *
+	 * @return ADORecordSet|bool
 	 */
 	public function Execute($sql, $inputarr = false) {
 		if ($this->fnExecute) {
@@ -1929,10 +1931,10 @@ if (!defined('_ADODB_LAYER')) {
 	* Return one row of sql statement. Recordset is disposed for you.
 	* Note that SelectLimit should not be called.
 	*
-	* @param string $sql SQL statement
+	* @param string     $sql      SQL statement
 	* @param array|bool $inputarr input bind array
-        *
-        * @return object recordset array
+	 *
+	* @return array|false Array containing the first row of the query
 	*/
 	function GetRow($sql,$inputarr=false) {
 		global $ADODB_COUNTRECS;
@@ -1956,13 +1958,12 @@ if (!defined('_ADODB_LAYER')) {
 		return false;
 	}
 
-        /**
-         * @param int [secs2cache]	seconds to cache data, set to 0 to force query. This is an optional parameter.
-         * @param string|bool $sql SQL statement
-         * @param array|bool $inputarr input bind array
-         *
-         * @return object recordset array
-         */
+	/**
+	 * @param int $secs2cache
+	 * @param string|false $sql
+	 * @param mixed[]|bool $inputarr
+	 * @return mixed[]|bool
+	 */
 	function CacheGetRow($secs2cache,$sql=false,$inputarr=false) {
 		$rs = $this->CacheExecute($secs2cache,$sql,$inputarr);
 		if ($rs) {
@@ -2080,10 +2081,9 @@ if (!defined('_ADODB_LAYER')) {
 	 * When not in safe mode, we create 256 sub-directories in the cache directory ($ADODB_CACHE_DIR).
 	 * Assuming that we can have 50,000 files per directory with good performance,
 	 * then we can scale to 12.8 million unique cached recordsets. Wow!
-         * WK moded to allow setting memcache prefix with unique key by query ( own application use to delete specific queries )
 	 */
 	function _gencachename($sql,$createdir) {
-		global $ADODB_CACHE, $ADODB_CACHE_DIR, $ADODB_MEM_UNIQUE;
+		global $ADODB_CACHE, $ADODB_CACHE_DIR;
 
 		if ($this->fetchMode === false) {
 			global $ADODB_FETCH_MODE;
@@ -2091,13 +2091,7 @@ if (!defined('_ADODB_LAYER')) {
 		} else {
 			$mode = $this->fetchMode;
 		}
-		
-        if ( isset($ADODB_MEM_UNIQUE) && strlen($ADODB_MEM_UNIQUE)>4 ) {
-            return $ADODB_MEM_UNIQUE;
-         } else {
-            $m = md5($sql.$this->databaseType.$this->database.$this->user.$mode);
-         }
-
+		$m = md5($sql.$this->databaseType.$this->database.$this->user.$mode);
 		if (!$ADODB_CACHE->createdir) {
 			return $m;
 		}
@@ -2114,10 +2108,12 @@ if (!defined('_ADODB_LAYER')) {
 	/**
 	 * Execute SQL, caching recordsets.
 	 *
-	 * @param int [secs2cache]	seconds to cache data, set to 0 to force query. This is an optional parameter.
-	 * @param string|bool $sql SQL statement to execute
-	 * @param array|bool $inputarr [inputarr]	holds the input data  to bind to
-	 * @return object RecordSet or false
+	 * @param int         $secs2cache Seconds to cache data, set to 0 to force query.
+	 *                                This is an optional parameter.
+	 * @param string|bool $sql        SQL statement to execute
+	 * @param array|bool  $inputarr   Holds the input data to bind
+	 *
+	 * @return ADORecordSet RecordSet or false
 	 */
 	function CacheExecute($secs2cache,$sql=false,$inputarr=false) {
 		global $ADODB_CACHE;
@@ -4926,7 +4922,8 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	 * @param [db]  is the database Connection object to create. If undefined,
 	 *	use the last database driver that was loaded by ADOLoadCode().
 	 *
-	 * @return the ADOConnection freshly created instance of the Connection class.
+	 * @return ADOConnection|false The freshly created instance of the Connection class
+	 *                             or false in case of error.
 	 */
 	function ADONewConnection($db='') {
 		global $ADODB_NEWCONNECTION, $ADODB_LASTDB;

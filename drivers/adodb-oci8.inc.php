@@ -89,7 +89,6 @@ END;
 	var $connectSID = false;
 	var $_bind = false;
 	var $_nestedSQL = true;
-	var $_hasOciFetchStatement = false;
 	var $_getarray = false; // currently not working
 	var $leftOuter = '';  // oracle wierdness, $col = $value (+) for LEFT OUTER, $col (+)= $value for RIGHT OUTER
 	var $session_sharing_force_blob = false; // alter session on updateblob if set to true
@@ -103,10 +102,20 @@ END;
 
 	// var $ansiOuter = true; // if oracle9
 
-	function __construct()
-	{
-		$this->_hasOciFetchStatement = ADODB_PHPVER >= 0x4200;
-	}
+	/*
+	 * Legacy compatibility for sequence names for emulated auto-increments
+	 */
+	public $useCompactAutoIncrements = false;
+	
+	/*
+	 * Defines the schema name for emulated auto-increment columns
+	 */
+	public $schema = false;
+	
+	/*
+	 * Defines the prefix for emulated auto-increment columns
+	 */
+	public $seqPrefix = 'SEQ_';
 
 	/*  function MetaColumns($table, $normalize=true) added by smondino@users.sourceforge.net*/
 	function MetaColumns($table, $normalize=true)
@@ -303,6 +312,43 @@ END;
 	function IfNull( $field, $ifNull )
 	{
 		return " NVL($field, $ifNull) "; // if Oracle
+	}
+	
+	function _insertid($tabname,$column='')
+	{
+		
+		if (!$this->seqField) 
+			return false;
+
+		
+		if ($this->schema) 
+		{
+			$t = strpos($tabname,'.');
+			if ($t !== false) 
+				$tab = substr($tabname,$t+1);
+			else 
+				$tab = $tabname;
+			
+			if ($this->useCompactAutoIncrements)
+				$tab = sprintf('%u',crc32(strtolower($tab)));
+				
+			$seqname = $this->schema.'.'.$this->seqPrefix.$tab;
+		} 
+		else 
+		{
+			if ($this->useCompactAutoIncrements)
+				$tabname = sprintf('%u',crc32(strtolower($tabname)));
+			
+			$seqname = $this->seqPrefix.$tabname;
+		}
+
+		if (strlen($seqname) > 30)
+			/*
+			* We cannot successfully identify the sequence
+			*/
+			return false;
+		
+		return $this->getOne("SELECT $seqname.currval FROM dual");
 	}
 
 	// format and return date string in database date format

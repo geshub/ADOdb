@@ -28,7 +28,6 @@ function getmicrotime()
 }
 
 
-if (PHP_VERSION < 5) include_once('../adodb-pear.inc.php');
 //--------------------------------------------------------------------------------------
 //define('ADODB_ASSOC_CASE',1);
 //
@@ -1346,11 +1345,6 @@ END Adodb;
 
 	$rs = $db->SelectLimit('select id,firstname,lastname,created,\'The	"young man", he said\' from ADOXYZ',10);
 
-	if (PHP_VERSION < 5) {
-		print "<pre>";
-		rs2tabout($rs);
-		print "</pre>";
-	}
 	#print " CacheFlush ";
 	#$db->CacheFlush();
 
@@ -1583,13 +1577,13 @@ END Adodb;
 		else {
 			$name = $db->GetOne("Select firstname from ADOXYZ where id=1");
 			if (trim($name) != "Carolx") Err("Error: CompleteTrans (2) should have succeeded, returned name=$name");
-			else echo "<p> -- Passed StartTrans test2 - commiting</p>";
+			else echo "<p> -- Passed StartTrans test2 - committing</p>";
 		}
 	}
 	flush();
 	$saved = $db->debug;
 	$db->debug=1;
-	$cnt = _adodb_getcount($db, 'select * from ADOXYZ where firstname in (select firstname from ADOXYZ)');
+	$cnt = _adodb_S($db, 'select * from ADOXYZ where firstname in (select firstname from ADOXYZ)');
 	echo "<b>Count=</b> $cnt";
 	$db->debug=$saved;
 
@@ -1645,16 +1639,21 @@ END Adodb;
 	print "<p>Testing Bad Connection</p>";
 	flush();
 
-	if (true || PHP_VERSION < 5)  {
-		if ($db->dataProvider == 'odbtp') $db->databaseType = 'odbtp';
-		$conn = NewADOConnection($db->databaseType);
-		$conn->raiseErrorFn = 'adodb_test_err';
-		if (1) $conn->PConnect('abc','baduser','badpassword');
-		if ($TESTERRS == 2) print "raiseErrorFn tests passed<br>";
-		else print "<b>raiseErrorFn tests failed ($TESTERRS)</b><br>";
-
-		flush();
+	if ($db->dataProvider == 'odbtp') {
+		$db->databaseType = 'odbtp';
 	}
+	$conn = NewADOConnection($db->databaseType);
+	$conn->raiseErrorFn = 'adodb_test_err';
+	$conn->PConnect('abc','baduser','badpassword');
+	if ($TESTERRS == 2) {
+		print "raiseErrorFn tests passed<br>";
+	}
+	else {
+		print "<b>raiseErrorFn tests failed ($TESTERRS)</b><br>";
+	}
+
+	flush();
+
 	////////////////////////////////////////////////////////////////////
 
 	global $nocountrecs;

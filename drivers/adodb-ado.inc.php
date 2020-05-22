@@ -52,9 +52,7 @@ class ADODB_ado extends ADOConnection {
 
 	function _affectedrows()
 	{
-		if (PHP_VERSION >= 5) return $this->_affectedRows;
-
-		return $this->_affectedRows->value;
+		return $this->_affectedRows;
 	}
 
 	// you can also pass a connection string like this:
@@ -81,7 +79,7 @@ class ADODB_ado extends ADOConnection {
 			// not yet
 			//if ($argDatabasename) $argHostname .= ";Initial Catalog=$argDatabasename";
 
-			//use trusted conection for SQL if username not specified
+			//use trusted connection for SQL if username not specified
 			if (!$argUsername) $argHostname .= ";Trusted_Connection=Yes";
 		} else if ($argProvider=='access')
 			$argProvider = "Microsoft.Jet.OLEDB.4.0"; // Microsoft Jet Provider

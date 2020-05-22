@@ -118,6 +118,12 @@ class perf_mysql extends adodb_perf{
 		return $s;
 	}
 
+	/**
+	 * Returns a list of table statuses.
+	 * 
+	 * @param  string  $orderby  Unused (compatibility with parent method)
+	 * @return string A formatted set of recordsets
+	 */
 	function tables($orderby='1')
 	{
 		if (!$this->tablesSQL) return false;
@@ -302,7 +308,7 @@ class perf_mysql extends adodb_perf{
             case ADODB_OPT_LOW : $sql = $this->optimizeTableLow; break;
             case ADODB_OPT_HIGH : $sql = $this->optimizeTableHigh; break;
             default :
-                // May dont use __FUNCTION__ constant for BC (__FUNCTION__ Added in PHP 4.3.0)
+                // May don't use __FUNCTION__ constant for BC (__FUNCTION__ Added in PHP 4.3.0)
                 ADOConnection::outp( sprintf( "<p>%s: '%s' using of undefined mode '%s'</p>", __CLASS__, __FUNCTION__, $mode));
                 return false;
         }
