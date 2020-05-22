@@ -1283,7 +1283,7 @@ if (!defined('_ADODB_LAYER')) {
 		if( is_string($sql) ) {
 			// Strips keyword used to help generate SELECT COUNT(*) queries
 			// from SQL if it exists.
-			$sql = ADODB_str_replace( '_ADODB_COUNT', '', $sql );
+			$sql = str_replace( '_ADODB_COUNT', '', $sql );
 		}
 
 		if ($this->debug) {
